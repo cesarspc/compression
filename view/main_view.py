@@ -12,7 +12,7 @@ class MainView(tk.Tk):
         frame_buttons = tk.Frame(self)
         frame_buttons.pack(fill="x", pady=5)
 
-        tk.Button(frame_buttons, text="Cargar texto",
+        tk.Button(frame_buttons, text="Cargar Archivo",
                   command=self.controller.on_load_text).pack(side="left")
         tk.Button(frame_buttons, text="Comprimir",
                   command=self.controller.on_compress).pack(side="left")
@@ -22,7 +22,7 @@ class MainView(tk.Tk):
                   command=self.controller.on_load_compressed).pack(side="left")
         tk.Button(frame_buttons, text="Descomprimir",
                   command=self.controller.on_decompress).pack(side="left")
-        tk.Button(frame_buttons, text="Guardar texto",
+        tk.Button(frame_buttons, text="Guardar Archivo Descomprimido",
                   command=self.controller.on_save_text).pack(side="left")
 
         self.txt_original = scrolledtext.ScrolledText(self, height=10)
