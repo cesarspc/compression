@@ -1,8 +1,8 @@
 class LZ78Codec:
     def compress(self, data: bytes):
         if not data:
-            raise ValueError("Archivo vacío")
-        # Ensure input is bytes
+            raise ValueError("Archivo vacio")
+        # Asegurar que la entrada sea en bytes
         if isinstance(data, str):
             data = data.encode('utf-8')
             
@@ -11,9 +11,9 @@ class LZ78Codec:
         result = []
         dict_index = 1
         
-        # Iterate over bytes (integers 0-255)
+        # Iterar sobre bytes (enteros 0-255)
         for byte_val in data:
-            # Create a single-byte bytes object
+            # Crear un objeto bytes de un solo byte
             c = bytes([byte_val])
             temp = current + c
             if temp in dictionary:
@@ -27,7 +27,7 @@ class LZ78Codec:
                 
         if current:
             index = dictionary.get(current, 0)
-            result.append((index, b""))  # último par
+            result.append((index, b"")) 
             
         return result, dictionary
 
@@ -37,18 +37,15 @@ class LZ78Codec:
         dict_index = 1
         
         for idx, ch_bytes in pairs:
-            # ensure ch_bytes is bytes
+            # asegurar que ch_bytes sea bytes
             if isinstance(ch_bytes, str):
-                # Should not happen if loaded correctly via file_manager, but for safety
-                # If it was a string representation of hex, we might need conversion?
-                # For now assume tuple comes with bytes or we handle it in file manager
                 pass
             
             if idx == 0:
                 word = ch_bytes
             else:
                 if idx not in dictionary:
-                    raise ValueError(f"Diccionario incompatible: index {idx} not found")
+                    raise ValueError(f"Diccionario incompatible: indice {idx} no encontrado")
                 word = dictionary[idx] + ch_bytes
             
             result.append(word)

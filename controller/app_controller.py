@@ -19,41 +19,39 @@ class AppController:
 
     def on_load_text(self):
         try:
-            # Updated to allow all supported types
-            path = self.view.ask_open_file([("All supported", "*.txt *.xlsx *.pdf"), ("Text files", "*.txt"), ("Excel", "*.xlsx"), ("PDF", "*.pdf")])
+            # tipos de archivos soportados
+            path = self.view.ask_open_file([("Todos soportados", "*.txt *.xlsx *.pdf"), ("Archivos de texto", "*.txt"), ("Excel", "*.xlsx"), ("PDF", "*.pdf")])
             if not path:
                 return
             self.current_data = self.fm.read_file(path)
             
             self.view.txt_original.delete("1.0", "end")
             try:
-                # Try to decode to show in text area
+                # Intentar decodificar para mostrar en el area de texto
                 text_content = self.current_data.decode("utf-8")
                 self.view.txt_original.insert("1.0", text_content)
             except UnicodeDecodeError:
-                # If binary, show placeholder
-                self.view.txt_original.insert("1.0", f"<Binary content: {len(self.current_data)} bytes>\nPreview not available.")
+                # Si es binario, mostrar marcador de posicion
+                self.view.txt_original.insert("1.0", f"<Contenido binario: {len(self.current_data)} bytes>\nVista previa no disponible.")
                 
             self.view.txt_dict.delete("1.0", "end")
-            self.view.lbl_stats.config(text="Estadísticas: ")
+            self.view.lbl_stats.config(text="Estadisticas: ")
         except Exception as e:
             self.view.show_error(str(e))
 
     def on_compress(self):
         try:
-            # If manually edited text in UI, restart from that (only if it was text)
-            # But for binary support, we should prefer the loaded current_data if it wasn't modified.
-            # For simplicity, if the UI content matches current_data decoded, use current_data.
-            # Or if valid text is in UI, encod it.
+            # Si el texto se edito manualmente en la interfaz, la compresion o descompresion partira desde ahi
+            # Para soporte binario, debemos preferir los current_data cargados si no se modificaron.
             
             ui_content = self.view.txt_original.get("1.0", "end-1c")
             
-            # Check if UI content is the placeholder
-            if ui_content.startswith("<Binary content:") and "Preview not available" in ui_content:
-                # Use cached binary data
+            # Verificar si el contenido de la interfaz es el marcador de posicion
+            if ui_content.startswith("<Contenido binario:") and "Vista previa no disponible" in ui_content:
+                # Usar datos binarios almacenados en cache
                 data_to_compress = self.current_data
             else:
-                # User might have typed something
+                # Verificar si el usuario podria haber escrito algo
                 data_to_compress = ui_content.encode("utf-8")
                 self.current_data = data_to_compress
 
@@ -62,29 +60,28 @@ class AppController:
             self.current_dict = dictionary
             self.view.txt_dict.delete("1.0", "end")
             
-            # limiting dictionary display for performance if too large could be good, but keeping simple for now
-            # Dictionary keys/values are now bytes often, so repr() or hex needed
+            # Limitar la visualizacion del diccionario por rendimiento
+            # Las claves/valores del diccionario son bytes, asi que se usa la funcion repr() o hex
             full_dict_str = ""
             for k, v in dictionary.items():
                 k_str = k.hex() if isinstance(k, bytes) else str(k)
                 v_str = v.hex() if isinstance(v, bytes) else str(v)
                 full_dict_str += f"{k_str}: {v_str}\n"
             
-            # Truncate for display if massive? Let's just show it. 
-            # Tkinter might choke on massive text, maybe truncate if > 10KB text
+            # Truncar para mejor visualizacion, solo para visualizar
             if len(full_dict_str) > 50000:
-                self.view.txt_dict.insert("end", full_dict_str[:50000] + "\n... (truncated)")
+                self.view.txt_dict.insert("end", full_dict_str[:50000] + "\n... (truncado)")
             else:
                 self.view.txt_dict.insert("end", full_dict_str)
 
             original_size = len(data_to_compress)
-            # Rough estimate of compressed size: num_pairs * (size of int + size of char/byte)
-            # Actual file size matches what write_compressed does
+            # Estimacion aproximada del tamano comprimido: num_pairs * (tamano de int + tamano de char/byte)
+            # El tamano real del archivo coincide con lo que hace write_compressed
             compressed_size = 0
             for idx, ch_bytes in pairs:
-                # In file: "index|hex_char\n"
-                # index length + 1 (|) + 2 (hex) + 1 (\n) approx
-                # idx len varies
+                # En archivo: "index|hex_char\n"
+                # longitud del index + 1 (|) + 2 (hex) + 1 (\n) aprox
+                # la longitud de idx varia
                 line_len = len(str(idx)) + 1 + 2 + 1 
                 compressed_size += line_len
             
@@ -92,7 +89,7 @@ class AppController:
             self.view.lbl_stats.config(
                 text=f"Original: {original_size} bytes, "
                      f"Comprimido (est): {compressed_size} bytes, "
-                     f"Compresión: {ratio:.2f}%"
+                     f"Compresion: {ratio:.2f}%"
             )
         except Exception as e:
             self.view.show_error(str(e))
@@ -101,7 +98,7 @@ class AppController:
         if not self.current_pairs:
             self.view.show_error("No hay datos comprimidos")
             return
-        path = self.view.ask_save_file(".lz78", [("LZ78 files", "*.lz78")])
+        path = self.view.ask_save_file(".lz78", [("Archivos LZ78", "*.lz78")])
         if not path:
             return
         try:
@@ -115,12 +112,12 @@ class AppController:
 
     def on_load_compressed(self):
         try:
-            path = self.view.ask_open_file([("LZ78 files", "*.lz78")])
+            path = self.view.ask_open_file([("Archivos LZ78", "*.lz78")])
             if not path:
                 return
             self.current_pairs = self.fm.read_compressed(path)
             self.view.txt_dict.delete("1.0", "end")
-            self.view.txt_dict.insert("1.0", f"Loaded {len(self.current_pairs)} pairs.\nReady to decompress.")
+            self.view.txt_dict.insert("1.0", f"Se cargaron {len(self.current_pairs)} pares.\nListo para descomprimir.")
         except Exception as e:
             self.view.show_error(str(e))
 
@@ -138,11 +135,11 @@ class AppController:
                 text_content = data.decode("utf-8")
                 self.view.txt_original.insert("1.0", text_content)
             except UnicodeDecodeError:
-                self.view.txt_original.insert("1.0", f"<Binary content: {len(data)} bytes>\nPreview not available.")
+                self.view.txt_original.insert("1.0", f"<Contenido binario: {len(data)} bytes>\nVista previa no disponible.")
 
             self.view.txt_dict.delete("1.0", "end")
             
-            # Show dict
+            # Mostrar diccionario
             full_dict_str = ""
             for k, v in dictionary.items():
                 k_str = k.hex() if isinstance(k, bytes) else str(k)
@@ -150,7 +147,7 @@ class AppController:
                 full_dict_str += f"{k_str}: {v_str}\n"
             
             if len(full_dict_str) > 50000:
-                self.view.txt_dict.insert("end", full_dict_str[:50000] + "\n... (truncated)")
+                self.view.txt_dict.insert("end", full_dict_str[:50000] + "\n... (truncado)")
             else:
                 self.view.txt_dict.insert("end", full_dict_str)
                 
@@ -162,10 +159,8 @@ class AppController:
             self.view.show_error("No hay datos para guardar")
             return
         
-        # Determine default extension
-        # We don't track original extension, maybe we should?
-        # For now defaults to .txt but user can change
-        path = self.view.ask_save_file(".txt", [("All Files", "*.*"), ("Text files", "*.txt"), ("Excel", "*.xlsx"), ("PDF", "*.pdf")])
+        # Determinar extension por defecto
+        path = self.view.ask_save_file(".txt", [("Todos los archivos", "*.*"), ("Archivos de texto", "*.txt"), ("Excel", "*.xlsx"), ("PDF", "*.pdf")])
         if not path:
             return
         try:
